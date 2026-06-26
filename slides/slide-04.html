@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>改变内能的两种方式</title>
+  <style>
+:root {
+  --bg: #fff8ed;
+  --panel: #fffdf8;
+  --navy: #12345a;
+  --text: #25384d;
+  --muted: #74849a;
+  --line: #d8dee8;
+  --tag: #e8eef6;
+  --orange: #f28b2c;
+  --blue: #2f6fd6;
+  --teal: #16a394;
+  --shadow: 0 18px 48px rgba(18, 52, 90, 0.13);
+}
+* { box-sizing: border-box; }
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+}
+body { display: grid; place-items: center; }
+.slide {
+  position: relative;
+  width: min(100vw, 177.7778vh);
+  height: min(56.25vw, 100vh);
+  overflow: hidden;
+  padding: 5.2% 6% 6.5%;
+  background: linear-gradient(135deg, #fffaf0 0%, #fff7ea 58%, #f8fbff 100%);
+}
+.slide::after {
+  content: "";
+  position: absolute;
+  right: -7%;
+  bottom: -12%;
+  width: 34%;
+  height: 45%;
+  border-radius: 50%;
+  background: rgba(47, 111, 214, 0.05);
+  pointer-events: none;
+}
+.tag {
+  position: absolute;
+  top: 5.2%;
+  right: 5.6%;
+  padding: 0.55em 1em;
+  border-radius: 999px;
+  background: var(--tag);
+  color: #60738b;
+  font-size: clamp(13px, 1.05vw, 18px);
+  font-weight: 800;
+}
+h1 {
+  max-width: 78%;
+  margin: 0;
+  color: var(--navy);
+  font-size: clamp(34px, 4vw, 72px);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+.rule {
+  display: flex;
+  align-items: center;
+  width: 58%;
+  margin: 2.1% 0 2.8%;
+}
+.rule::before {
+  content: "";
+  width: 88px;
+  height: 7px;
+  border-radius: 99px;
+  background: var(--orange);
+}
+.rule::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: var(--line);
+}
+.layout {
+  display: grid;
+  grid-template-columns: 1.04fr 0.96fr;
+  gap: 3%;
+  align-items: stretch;
+}
+.card {
+  min-height: 48vh;
+  padding: 4.2%;
+  border: 1px solid rgba(216, 222, 232, 0.95);
+  border-radius: 24px;
+  background: rgba(255, 253, 248, 0.93);
+  box-shadow: var(--shadow);
+}
+.lead {
+  margin: 0 0 4%;
+  color: var(--navy);
+  font-size: clamp(19px, 1.65vw, 30px);
+  font-weight: 900;
+}
+ul {
+  margin: 0;
+  padding-left: 1.15em;
+  font-size: clamp(18px, 1.55vw, 28px);
+  line-height: 1.48;
+}
+li { margin: 0.42em 0; }
+.visual {
+  display: grid;
+  place-items: center;
+}
+.conclusion {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 5.2%;
+  z-index: 2;
+  padding: 1.15% 1.7%;
+  border-left: 8px solid var(--teal);
+  border-radius: 16px;
+  background: rgba(232, 248, 246, 0.86);
+  color: var(--text);
+  font-size: clamp(17px, 1.55vw, 28px);
+  font-weight: 700;
+}
+.q, .heat-color { color: var(--orange); font-weight: 900; }
+.w, .work-color { color: var(--blue); font-weight: 900; }
+.u, .inner-color { color: var(--teal); font-weight: 900; }
+.symbol { font-family: Georgia, "Times New Roman", serif; font-style: italic; }
+.formula {
+  color: var(--navy);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(34px, 4.5vw, 82px);
+  font-style: italic;
+  font-weight: 700;
+  text-align: center;
+}
+svg { width: 100%; max-height: 42vh; }
+.gas { fill: #e7faf7; stroke: var(--teal); stroke-width: 4; }
+.piston { fill: #eef5ff; stroke: var(--blue); stroke-width: 4; }
+.work-arrow { stroke: var(--blue); stroke-width: 7; fill: none; stroke-linecap: round; }
+.heat-arrow { stroke: var(--orange); stroke-width: 7; fill: none; stroke-linecap: round; }
+.thin { stroke: #93a4b8; stroke-width: 3; fill: none; }
+.label { fill: #25384d; font: 700 24px "Microsoft YaHei", Arial, sans-serif; }
+.slide-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 1.3%;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border: 1px solid rgba(216, 222, 232, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.88);
+  box-shadow: 0 10px 24px rgba(18, 52, 90, 0.09);
+}
+.slide-controls button,
+.slide-controls select {
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 800;
+}
+.slide-controls button { padding: 0 11px; cursor: pointer; }
+.slide-controls select { padding: 0 6px; }
+.nav-note {
+  position: absolute;
+  right: 5.7%;
+  bottom: 1.8%;
+  color: var(--muted);
+  font-size: clamp(10px, 0.82vw, 14px);
+}
+.step {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.step.show { opacity: 1; transform: none; }
+@media (max-aspect-ratio: 16 / 9) {
+  .slide { width: 100vw; height: 56.25vw; }
+}
+@media (min-aspect-ratio: 16 / 9) {
+  .slide { width: 177.7778vh; height: 100vh; }
+}
+</style>
+</head>
+<body data-page="4">
+  <main class="slide" aria-label="改变内能的两种方式">
+    <div class="tag">两种方式 · 4/8</div>
+    <h1 class="step">改变内能的两种方式</h1>
+    <div class="rule step" aria-hidden="true"></div>
+    <section class="layout">
+      <article class="card step">
+        <p class="lead">效果等价，方式不同</p>
+        <ul>
+        <li>做功：能量通过宏观力和位移转移。</li>
+        <li>热传递：能量因温度差而转移。</li>
+        <li>二者都能使系统内能发生改变。</li>
+        </ul>
+      </article>
+      <article class="card visual step">
+        <svg viewBox="0 0 620 330" role="img" aria-label="做功和热传递对比"><rect x="55" y="88" width="210" height="165" rx="24" class="gas"/><path d="M25 170 H95" class="work-arrow"/><text x="80" y="62" class="label">做功 W</text><rect x="365" y="88" width="210" height="165" rx="24" class="gas"/><path d="M510 284 C480 240 486 205 454 176" class="heat-arrow"/><text x="405" y="62" class="label">热传递 Q</text></svg>
+      </article>
+    </section>
+    <section class="conclusion step">不能只看温度变化判断原因，要分析能量转移方式。</section>
+    <nav class="slide-controls" aria-label="单页课件控制">
+      <button type="button" data-prev>上一页</button>
+      <select data-page-select aria-label="页码跳转"></select>
+      <button type="button" data-next>下一页</button>
+      <button type="button" data-reset>重置 R</button>
+      <button type="button" data-fullscreen>全屏 F</button>
+    </nav>
+    <div class="nav-note">点击逐步出现 · ←/→ 直接翻页</div>
+  </main>
+  <script>
+(function () {
+  'use strict';
+  const pageNumber = Number(document.body.dataset.page);
+  const totalPages = 8;
+  const steps = Array.from(document.querySelectorAll('.step'));
+  const pageSelect = document.querySelector('[data-page-select]');
+  let visibleCount = 0;
+
+  function renderSteps() {
+    steps.forEach((item, index) => item.classList.toggle('show', index < visibleCount));
+  }
+
+  function resetAnimation() {
+    visibleCount = 0;
+    renderSteps();
+    window.setTimeout(() => {
+      visibleCount = 1;
+      renderSteps();
+    }, 60);
+  }
+
+  function revealNext() {
+    if (visibleCount < steps.length) {
+      visibleCount += 1;
+      renderSteps();
+      return;
+    }
+    goToPage(pageNumber + 1);
+  }
+
+  function goToPage(target) {
+    if (target < 1 || target > totalPages) return;
+    const file = `slide-${String(target).padStart(2, '0')}.html`;
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'thermo-slide-nav', page: target }, '*');
+    } else {
+      window.location.href = file;
+    }
+  }
+
+  for (let index = 1; index <= totalPages; index += 1) {
+    const option = document.createElement('option');
+    option.value = String(index);
+    option.textContent = `${index} / ${totalPages}`;
+    pageSelect.appendChild(option);
+  }
+  pageSelect.value = String(pageNumber);
+
+  document.querySelector('[data-prev]').addEventListener('click', (event) => {
+    event.stopPropagation();
+    goToPage(pageNumber - 1);
+  });
+  document.querySelector('[data-next]').addEventListener('click', (event) => {
+    event.stopPropagation();
+    goToPage(pageNumber + 1);
+  });
+  document.querySelector('[data-reset]').addEventListener('click', (event) => {
+    event.stopPropagation();
+    resetAnimation();
+  });
+  document.querySelector('[data-fullscreen]').addEventListener('click', (event) => {
+    event.stopPropagation();
+    const slide = document.querySelector('.slide');
+    if (!document.fullscreenElement && slide.requestFullscreen) slide.requestFullscreen();
+    else if (document.exitFullscreen) document.exitFullscreen();
+  });
+  pageSelect.addEventListener('click', (event) => event.stopPropagation());
+  pageSelect.addEventListener('change', () => goToPage(Number(pageSelect.value)));
+
+  document.addEventListener('click', revealNext);
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowRight') goToPage(pageNumber + 1);
+    if (event.key === 'ArrowLeft') goToPage(pageNumber - 1);
+    if (event.key.toLowerCase() === 'r') resetAnimation();
+    if (event.key.toLowerCase() === 'f') document.querySelector('[data-fullscreen]').click();
+  });
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'thermo-slide' && event.data.action === 'reset') resetAnimation();
+  });
+  resetAnimation();
+}());
+</script>
+</body>
+</html>
