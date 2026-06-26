@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>热力学第一定律｜高中物理网页课件</title>
+  <style>
+    :root {
+      --bg: #fff8ed;
+      --panel: #fffdf8;
+      --navy: #12345a;
+      --text: #25384d;
+      --muted: #74849a;
+      --line: #d8dee8;
+      --orange: #f28b2c;
+      --shadow: 0 18px 48px rgba(18, 52, 90, 0.13);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+    }
+    body { display: grid; place-items: center; }
+    .deck {
+      position: relative;
+      width: min(100vw, 177.7778vh);
+      height: min(56.25vw, 100vh);
+      overflow: hidden;
+      background: linear-gradient(135deg, #fffaf0 0%, #fff7ea 55%, #f8fbff 100%);
+    }
+    .slide-frame {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: transparent;
+    }
+    .brand {
+      position: absolute;
+      top: 4.6%;
+      left: 4.8%;
+      z-index: 3;
+      color: var(--navy);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      pointer-events: none;
+    }
+    .brand small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    .deck-controls {
+      position: absolute;
+      left: 50%;
+      bottom: 1.3%;
+      z-index: 4;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transform: translateX(-50%);
+      padding: 6px 10px;
+      border: 1px solid rgba(216, 222, 232, 0.9);
+      border-radius: 999px;
+      background: rgba(255, 253, 248, 0.88);
+      box-shadow: var(--shadow);
+    }
+    .deck-controls button,
+    .deck-controls select {
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .deck-controls button { padding: 0 11px; cursor: pointer; }
+    .deck-controls select { padding: 0 6px; }
+    .deck-controls button:hover,
+    .deck-controls select:hover { border-color: var(--orange); }
+    .hint {
+      position: absolute;
+      right: 4.8%;
+      bottom: 1.8%;
+      z-index: 3;
+      color: var(--muted);
+      font-size: clamp(10px, 0.82vw, 14px);
+      pointer-events: none;
+    }
+    @media (max-aspect-ratio: 16 / 9) {
+      .deck { width: 100vw; height: 56.25vw; }
+    }
+    @media (min-aspect-ratio: 16 / 9) {
+      .deck { width: 177.7778vh; height: 100vh; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" aria-label="热力学第一定律课件总入口">
+    <div class="brand">人教版高中物理<small>热力学第一定律 · 课堂演示</small></div>
+    <iframe class="slide-frame" id="slideFrame" title="课件页面" src="slides/slide-01.html"></iframe>
+    <nav class="deck-controls" aria-label="课件控制">
+      <button id="prevBtn" type="button">上一页</button>
+      <select id="pageSelect" aria-label="页码跳转"></select>
+      <button id="nextBtn" type="button">下一页</button>
+      <button id="resetBtn" type="button">重置 R</button>
+      <button id="fullBtn" type="button">全屏 F</button>
+    </nav>
+    <div class="hint">←/→ 翻页 · 点击页面逐步出现</div>
+  </main>
+  <script>
+    (function () {
+      'use strict';
+      const pages = Array.from({ length: 8 }, (_, index) => `slides/slide-${String(index + 1).padStart(2, '0')}.html`);
+      const titles = ['封面', '情境导入', '学习任务', '两种方式', '做功研究', '热传递研究', '定律与符号', '总结与引导'];
+      const frame = document.getElementById('slideFrame');
+      const pageSelect = document.getElementById('pageSelect');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const fullBtn = document.getElementById('fullBtn');
+      let currentPage = 1;
+
+      pages.forEach((_, index) => {
+        const option = document.createElement('option');
+        option.value = String(index + 1);
+        option.textContent = `${index + 1}/8 ${titles[index]}`;
+        pageSelect.appendChild(option);
+      });
+
+      function goToPage(page) {
+        currentPage = Math.max(1, Math.min(pages.length, page));
+        frame.src = pages[currentPage - 1];
+        pageSelect.value = String(currentPage);
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === pages.length;
+      }
+
+      function resetCurrentSlide() {
+        frame.contentWindow.postMessage({ type: 'thermo-slide', action: 'reset' }, '*');
+      }
+
+      prevBtn.addEventListener('click', () => goToPage(currentPage - 1));
+      nextBtn.addEventListener('click', () => goToPage(currentPage + 1));
+      pageSelect.addEventListener('change', () => goToPage(Number(pageSelect.value)));
+      resetBtn.addEventListener('click', resetCurrentSlide);
+      fullBtn.addEventListener('click', () => {
+        const deck = document.querySelector('.deck');
+        if (!document.fullscreenElement && deck.requestFullscreen) deck.requestFullscreen();
+        else if (document.exitFullscreen) document.exitFullscreen();
+      });
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowRight') goToPage(currentPage + 1);
+        if (event.key === 'ArrowLeft') goToPage(currentPage - 1);
+        if (event.key.toLowerCase() === 'f') fullBtn.click();
+        if (event.key.toLowerCase() === 'r') resetCurrentSlide();
+      });
+      window.addEventListener('message', (event) => {
+        if (!event.data || event.data.type !== 'thermo-slide-nav') return;
+        if (Number.isInteger(event.data.page)) goToPage(event.data.page);
+      });
+      goToPage(1);
+    }());
+  </script>
+</body>
+</html>
