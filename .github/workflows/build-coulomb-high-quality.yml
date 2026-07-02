@@ -1,7 +1,7 @@
 name: Build high-quality Coulomb DOCX
 
 on:
-  push:
+  pull_request:
     branches: [main]
     paths:
       - 'tools/build_coulomb_high_quality_docx.py'
@@ -15,8 +15,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout source branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,12 +29,34 @@ jobs:
       - name: Build DOCX
         run: python tools/build_coulomb_high_quality_docx.py
 
-      - name: Commit generated DOCX
+      - name: Validate DOCX package and XML
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import xml.etree.ElementTree as ET
+          p = Path('downloads/一题三变_第九章_库仑定律_高质量版.docx')
+          assert p.exists() and p.stat().st_size > 10000, p
+          with ZipFile(p) as z:
+              required = {'[Content_Types].xml', '_rels/.rels', 'word/document.xml', 'word/styles.xml', 'word/_rels/document.xml.rels'}
+              assert required.issubset(set(z.namelist()))
+              ET.fromstring(z.read('word/document.xml'))
+              ET.fromstring(z.read('word/styles.xml'))
+          print(f'validated: {p} ({p.stat().st_size} bytes)')
+          PY
+
+      - name: Commit generated DOCX to source branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "downloads/一题三变_第九章_库仑定律_高质量版.docx"
           if ! git diff --cached --quiet; then
             git commit -m "生成库仑定律一题三变高质量 Word"
-            git push
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
+
+      - name: Upload DOCX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coulomb-law-high-quality-docx
+          path: downloads/一题三变_第九章_库仑定律_高质量版.docx
