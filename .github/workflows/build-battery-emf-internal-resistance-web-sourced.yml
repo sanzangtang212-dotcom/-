@@ -1,0 +1,92 @@
+name: Build battery EMF and internal resistance DOCX
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/build_battery_emf_internal_resistance_web_sourced.py'
+      - '.github/workflows/build-battery-emf-internal-resistance-web-sourced.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install document dependencies
+        run: pip install python-docx pillow requests
+
+      - name: Normalize publishing typography
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/build_battery_emf_internal_resistance_web_sourced.py')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace('k=0.034 V⁻¹·Ω⁻¹、b=0.68 V⁻¹', 'k=0.034、b=0.68（单位由图像坐标确定）')
+          p.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Build and self-check DOCX
+        run: python tools/build_battery_emf_internal_resistance_web_sourced.py
+
+      - name: Independent package validation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import xml.etree.ElementTree as ET
+
+          p = Path('downloads/参考案例1_测量干电池的电动势和内阻_网络精选递进版.docx')
+          assert p.exists() and p.stat().st_size > 30000, p
+          with ZipFile(p) as z:
+              names = set(z.namelist())
+              assert 'word/document.xml' in names
+              assert 'word/styles.xml' in names
+              assert len([n for n in names if n.startswith('word/media/')]) >= 3
+              xml = z.read('word/document.xml').decode('utf-8')
+              ET.fromstring(xml)
+              forbidden = '⁰¹²³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ'
+              assert not any(ch in xml for ch in forbidden)
+              assert xml.count('【题目】') == 3
+              assert xml.count('【答案】') == 3
+              assert xml.count('【解析】') == 3
+              assert xml.count('【来源】') == 3
+              assert '<m:oMathPara' in xml and '<m:f>' in xml
+              assert '2020年普通高等学校招生全国统一考试天津卷' in xml
+              assert '2021年普通高等学校招生全国统一考试全国乙卷' in xml
+              assert 'E=2.9 V' in xml and 'r=0.80 Ω' in xml
+              assert 'E=1.55 V' in xml and 'r=1.0 Ω' in xml
+              assert '15.0 Ω' in xml and '5%' in xml
+              for bad in ['TODO', '待补充', 'XXXX', '�']:
+                  assert bad not in xml
+          print(f'validated: {p} ({p.stat().st_size} bytes)')
+          PY
+
+      - name: Commit generated DOCX
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/build_battery_emf_internal_resistance_web_sourced.py "downloads/参考案例1_测量干电池的电动势和内阻_网络精选递进版.docx"
+          if ! git diff --cached --quiet; then
+            git commit -m "生成测量干电池电动势和内阻网络精选递进版Word"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: battery-emf-internal-resistance-web-sourced
+          path: downloads/参考案例1_测量干电池的电动势和内阻_网络精选递进版.docx
