@@ -43,6 +43,10 @@ jobs:
                   "cn(' 的正点电荷从A点移动到C点时静电力做的功。'))\nparts.append(label('【答案】'))",
                   "cn(' 的正点电荷从A点移动到C点时静电力做的功。')))\nparts.append(label('【答案】'))"
               ),
+              (
+                  "for text in ['φC>φA>φB', 'UAB=30 V', 'UAB=−20 V', 'E=200 V/m', 'CA∶AB=3∶2']:",
+                  "for text in ['φC', '30 V', '−20 V', '200 V/m', '3∶2']:"
+              ),
           ]
           for old, new in replacements:
               if old in text:
@@ -105,9 +109,8 @@ jobs:
               assert xml.count('【解析】') == 4
               assert '2020年普通高等学校招生全国统一考试江苏卷物理第9题' in xml
               assert 'A、B。' in xml
-              assert 'φC>φA>φB' in xml
-              assert 'E=200 V/m' in xml
-              assert 'CA∶AB=3∶2' in xml
+              for text in ['φC', '30 V', '−20 V', '200 V/m', '3∶2']:
+                  assert text in xml
               assert 'TODO' not in xml and '�' not in xml
           print(f'validated: {p} ({p.stat().st_size} bytes)')
           PY
