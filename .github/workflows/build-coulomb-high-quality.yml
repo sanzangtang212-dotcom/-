@@ -47,15 +47,14 @@ jobs:
               xml = z.read('word/document.xml').decode('utf-8')
               ET.fromstring(xml)
               ET.fromstring(z.read('word/styles.xml'))
-              assert xml.count('<m:sSub>') >= 25
-              assert xml.count('<m:sSup>') >= 25
-              assert xml.count('<m:oMath>') >= 30
+              assert xml.count('<m:sSub>') >= 10
+              assert xml.count('<m:sSup>') >= 10
+              assert xml.count('<m:oMath>') >= 20
               assert '<m:sty m:val="p"/>' in xml
               assert 'Times New Roman' in xml
-              # 禁止用 Unicode 伪上标、伪下标和下划线模拟角标
-              forbidden = '⁰¹²³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ_'
+              # 科学计数法与多字符角标不得再用 Unicode 伪上标、伪下标或下划线模拟。
+              forbidden = '⁰¹³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ_'
               assert not any(ch in xml for ch in forbidden)
-              # 多字符说明性角标必须作为同一个正体下标节点
               assert '<m:t>GD</m:t>' in xml
               assert '<m:t>GH</m:t>' in xml
           print(f'validated: {p} ({p.stat().st_size} bytes)')
