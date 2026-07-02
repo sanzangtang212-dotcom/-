@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "/home/runner/work/-/-/tools/build_potential_difference_example_docx.py", line 558, in <module>
-    assert text in xml
-           ^^^^^^^^^^^
-AssertionError
