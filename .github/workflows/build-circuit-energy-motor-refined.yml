@@ -1,0 +1,153 @@
+name: Build refined circuit-energy motor DOCX
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/build_circuit_energy_motor_refined.py'
+      - '.github/workflows/build-circuit-energy-motor-refined.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install python-docx pillow
+
+      - name: Normalize publishing typography
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/build_circuit_energy_motor_refined.py')
+          text = p.read_text(encoding='utf-8')
+
+          old1 = "add_body(doc, '如图，电源电压恒为220 V，保护电阻R=10 Ω，电动机线圈电阻r=1.0 Ω。电动机正常工作时，电压表测得电动机两端电压为170 V。电动机匀速提升质量为10 kg的重物，不计摩擦，g取10 m/s²。')"
+          new1 = "p = add_body(doc, '', indent=True)\nadd_cn(p, '如图，电源电压恒为220 V，保护电阻R=10 Ω，电动机线圈电阻r=1.0 Ω。电动机正常工作时，电压表测得电动机两端电压为170 V。电动机匀速提升质量为10 kg的重物，不计摩擦，g取')\nadd_roman(p, '10 m/s')\nadd_roman(p, '2', sup=True)\nadd_cn(p, '。')"
+          text = text.replace(old1, new1)
+
+          old2 = "add_formula(doc, v() + mu('=') + mfrac(mu('825 W'), mdelim(mu('10 kg×10 m/s²'))) + mu('=8.25 m/s'))"
+          new2 = "add_formula(doc, v() + mu('=') + mfrac(mu('825 W'), mdelim(mu('10 kg×10 m/') + msup(mu('s'), mu('2')))) + mu('=8.25 m/s'))"
+          text = text.replace(old2, new2)
+
+          old3 = "add_body(doc, '某节水喷灌系统中，水以15 m/s的速度水平喷出，每秒喷出水的质量为2.0 kg。喷出的水从井下抽取，喷口离水面的高度保持3.75 m不变。水泵由电动机带动，电动机正常工作时输入电压为220 V，输入电流为2.0 A。不计电动机的摩擦损耗，电动机的输出功率等于水泵的输入功率。水泵效率为75%，忽略水在管道中运动的机械能损失，g取10 m/s²。下列说法正确的是（　　）')"
+          new3 = "p = add_body(doc, '', indent=True)\nadd_cn(p, '某节水喷灌系统中，水以15 m/s的速度水平喷出，每秒喷出水的质量为2.0 kg。喷出的水从井下抽取，喷口离水面的高度保持3.75 m不变。水泵由电动机带动，电动机正常工作时输入电压为220 V，输入电流为2.0 A。不计电动机的摩擦损耗，电动机的输出功率等于水泵的输入功率。水泵效率为75%，忽略水在管道中运动的机械能损失，g取')\nadd_roman(p, '10 m/s')\nadd_roman(p, '2', sup=True)\nadd_cn(p, '。下列说法正确的是（　　）')"
+          text = text.replace(old3, new3)
+
+          text = text.replace(
+              "add_body(doc, '注意：电动机正常转动时是非纯电阻用电器，不能用U²/R或UI=I²R计算其总功率。')",
+              "add_body(doc, '注意：电动机正常转动时是非纯电阻用电器，不能把电动机的总功率按纯电阻公式计算。')"
+          )
+
+          p.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Build and inspect DOCX
+        id: build
+        shell: bash
+        run: |
+          set +e
+          python -O tools/build_circuit_energy_motor_refined.py > circuit-energy-build.log 2>&1
+          status=$?
+          python - <<'PY' >> circuit-energy-build.log 2>&1
+          from pathlib import Path
+          from zipfile import ZipFile
+          p = Path('downloads/一题三变加高考真题_第十二章_电路中的能量转化_精修版.docx')
+          if not p.exists():
+              print('DOCX_NOT_CREATED')
+              raise SystemExit(1)
+          with ZipFile(p) as z:
+              xml = z.read('word/document.xml').decode('utf-8')
+          forbidden = '⁰¹²³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ'
+          offenders = sorted(set(ch for ch in xml if ch in forbidden))
+          print('OFFENDERS=', [f'U+{ord(ch):04X}:{ch}' for ch in offenders])
+          for ch in offenders:
+              pos = xml.find(ch)
+              print('CONTEXT', repr(xml[max(0,pos-80):pos+80]))
+          if offenders:
+              raise SystemExit(1)
+          PY
+          inspect_status=$?
+          if [ "$status" -eq 0 ] && [ "$inspect_status" -eq 0 ]; then final_status=0; else final_status=1; fi
+          cat circuit-energy-build.log
+          echo "status=$final_status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Commit diagnostic log
+        if: steps.build.outputs.status != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p debug
+          cp circuit-energy-build.log debug/circuit-energy-build.log
+          git add debug/circuit-energy-build.log
+          if ! git diff --cached --quiet; then
+            git commit -m "更新电路中的能量转化Word构建日志"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Stop on build failure
+        if: steps.build.outputs.status != '0'
+        run: exit 1
+
+      - name: Independent validation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import xml.etree.ElementTree as ET
+
+          p = Path('downloads/一题三变加高考真题_第十二章_电路中的能量转化_精修版.docx')
+          assert p.exists() and p.stat().st_size > 25000, p
+          with ZipFile(p) as z:
+              names = set(z.namelist())
+              assert 'word/document.xml' in names
+              assert 'word/styles.xml' in names
+              assert any(n.startswith('word/media/') for n in names)
+              xml = z.read('word/document.xml').decode('utf-8')
+              ET.fromstring(xml)
+              forbidden = '⁰¹²³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ'
+              assert not any(ch in xml for ch in forbidden)
+              assert xml.count('【题目】') == 5
+              assert xml.count('【答案】') == 5
+              assert xml.count('【解析】') == 5
+              assert '<m:oMathPara' in xml
+              assert '<m:f>' in xml and '<m:sSub>' in xml and '<m:sSup>' in xml
+              assert '2022年1月浙江省普通高校招生选考科目考试物理第12题' in xml
+              for text in ['150 W', '950 W', '83.3%', '8.0 W', '825 W', '8.25 m/s', '20 A', 'D。']:
+                  assert text in xml
+              for bad in ['TODO', '待补充', 'XXXX', '�']:
+                  assert bad not in xml
+          print(f'validated: {p} ({p.stat().st_size} bytes)')
+          PY
+
+      - name: Commit generated DOCX
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f debug/circuit-energy-build.log
+          git add -A tools/build_circuit_energy_motor_refined.py "downloads/一题三变加高考真题_第十二章_电路中的能量转化_精修版.docx" debug/circuit-energy-build.log
+          if ! git diff --cached --quiet; then
+            git commit -m "生成电路中的能量转化一题三变加高考真题精修版Word"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: circuit-energy-motor-refined
+          path: downloads/一题三变加高考真题_第十二章_电路中的能量转化_精修版.docx
