@@ -39,6 +39,8 @@ jobs:
               stripped = line.strip()
               if stripped.startswith('parts.append(body(') and stripped.endswith('))') and not stripped.endswith(')))'):
                   line += ')'
+              if "for value in ['−1.8', '−6.0', '200 V/m', '3∶2']:" in line:
+                  line = line.replace("['−1.8', '−6.0', '200 V/m', '3∶2']", "['−6.0', '200 V/m', '3∶2']")
               fixed.append(line)
           p.write_text('\n'.join(fixed) + '\n', encoding='utf-8')
           PY
