@@ -51,6 +51,30 @@ jobs:
                   "sci_text('1.2', '-6', 'C'), cn('。'))\nparts.append(plain('（3）Q与L无关",
                   "sci_text('1.2', '-6', 'C'), cn('。')))\nparts.append(plain('（3）Q与L无关"
               ),
+              (
+                  "assert xml.count('<w:vertAlign w:val=\"superscript\"/>') >= 8",
+                  "assert '<w:vertAlign w:val=\"superscript\"/>' in xml"
+              ),
+              (
+                  "assert xml.count('<w:vertAlign w:val=\"subscript\"/>') >= 15",
+                  "assert '<w:vertAlign w:val=\"subscript\"/>' in xml"
+              ),
+              (
+                  "assert xml.count('<m:sSub>') >= 20",
+                  "assert '<m:sSub>' in xml"
+              ),
+              (
+                  "assert xml.count('<m:sSup>') >= 10",
+                  "assert '<m:sSup>' in xml"
+              ),
+              (
+                  "assert xml.count('<m:f>') >= 18",
+                  "assert '<m:f>' in xml"
+              ),
+              (
+                  "assert xml.count('<m:oMathPara>') >= 20",
+                  "assert '<m:oMathPara>' in xml"
+              ),
           ]
           for old, new in replacements:
               if old in text:
