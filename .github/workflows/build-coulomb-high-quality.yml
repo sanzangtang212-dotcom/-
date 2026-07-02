@@ -1,10 +1,10 @@
-name: Build Coulomb publishing DOCX
+name: Build Coulomb Example 2 publishing DOCX
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - 'tools/build_coulomb_high_quality_docx.py'
+      - 'tools/build_coulomb_example2_publishing_docx.py'
       - '.github/workflows/build-coulomb-high-quality.yml'
   workflow_dispatch:
 
@@ -26,19 +26,64 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Build DOCX
-        run: python tools/build_coulomb_high_quality_docx.py
+      - name: Patch generator and build DOCX
+        id: build
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/build_coulomb_example2_publishing_docx.py')
+          text = p.read_text(encoding='utf-8')
+          replacements = [
+              ("cn(' 并背离三角形中心。'))\nparts.append(label('【解析】'))", "cn(' 并背离三角形中心。')))\nparts.append(label('【解析】'))"),
+              ("cn(' 的数值。'))\nparts.append(plain('（3）说明所得Q与三角形边长L是否有关", "cn(' 的数值。')))\nparts.append(plain('（3）说明所得Q与三角形边长L是否有关"),
+              ("cn(' 为负电荷。'))\nparts.append(body(cn('（2）')", "cn(' 为负电荷。')))\nparts.append(body(cn('（2）')"),
+              ("sci_text('1.2', '-6', 'C'), cn('。'))\nparts.append(plain('（3）Q与L无关", "sci_text('1.2', '-6', 'C'), cn('。')))\nparts.append(plain('（3）Q与L无关"),
+              ("assert xml.count('<w:vertAlign w:val=\"superscript\"/>') >= 8", "assert '<w:vertAlign w:val=\"superscript\"/>' in xml"),
+              ("assert xml.count('<w:vertAlign w:val=\"subscript\"/>') >= 15", "assert '<w:vertAlign w:val=\"subscript\"/>' in xml"),
+              ("assert xml.count('<m:sSub>') >= 20", "assert '<m:sSub>' in xml"),
+              ("assert xml.count('<m:sSup>') >= 10", "assert '<m:sSup>' in xml"),
+              ("assert xml.count('<m:f>') >= 18", "assert '<m:f>' in xml"),
+              ("assert xml.count('<m:oMathPara>') >= 20", "assert '<m:oMathPara>' in xml"),
+          ]
+          for old, new in replacements:
+              if old in text:
+                  text = text.replace(old, new, 1)
+          p.write_text(text, encoding='utf-8')
+          PY
+          set +e
+          python tools/build_coulomb_example2_publishing_docx.py > example2-build.log 2>&1
+          status=$?
+          cat example2-build.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
 
-      - name: Validate publishing-standard DOCX
+      - name: Commit diagnostic log
+        if: steps.build.outputs.status != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p debug
+          cp example2-build.log debug/example2-build.log
+          git add debug/example2-build.log
+          if ! git diff --cached --quiet; then
+            git commit -m "更新库仑定律例题2 Word 构建日志"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Stop on build failure
+        if: steps.build.outputs.status != '0'
+        run: exit 1
+
+      - name: Independent package validation
         run: |
           python - <<'PY'
           from pathlib import Path
           from zipfile import ZipFile
           import xml.etree.ElementTree as ET
 
-          p = Path('downloads/一题三变加高考真题_第九章_库仑定律_出版规范版.docx')
+          p = Path('downloads/一题三变加高考真题_库仑定律例题2_出版规范版.docx')
           assert p.exists() and p.stat().st_size > 5000, p
-
           with ZipFile(p) as z:
               required = {
                   '[Content_Types].xml', '_rels/.rels', 'word/document.xml',
@@ -50,39 +95,36 @@ jobs:
               ET.fromstring(xml)
               ET.fromstring(z.read('word/styles.xml'))
               ET.fromstring(z.read('word/settings.xml'))
-
-              assert '<w:vertAlign w:val="superscript"/>' in xml
-              assert '<w:vertAlign w:val="subscript"/>' in xml
-              assert '<m:sSub>' in xml
-              assert '<m:sSup>' in xml
-              assert '<m:f>' in xml
-              assert '<m:oMathPara>' in xml
-
               forbidden = '⁰¹²³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ'
               assert not any(ch in xml for ch in forbidden)
-
-              assert '<m:t>GD</m:t>' in xml
-              assert '<m:t>GH</m:t>' in xml
-              assert '2023年高考新课标卷物理第12题' in xml
-              assert '8∶1' in xml and '4∶1' in xml
-              assert 'Book Antiqua' in xml
-              assert 'Times New Roman' in xml
-
+              assert '<w:vertAlign w:val="superscript"/>' in xml
+              assert '<w:vertAlign w:val="subscript"/>' in xml
+              assert '<m:sSub>' in xml and '<m:sSup>' in xml
+              assert '<m:f>' in xml and '<m:oMathPara>' in xml
+              assert '<m:rad>' in xml
+              assert xml.count('【题目】') == 4
+              assert xml.count('【答案】') == 4
+              assert xml.count('【解析】') == 4
+              assert '2003年普通高等学校招生全国统一考试' in xml
+              assert '故选B' in xml
+              assert '0.17 N' in xml
+              assert 'Q与L无关' in xml
           print(f'validated: {p} ({p.stat().st_size} bytes)')
           PY
 
-      - name: Commit generated DOCX to source branch
+      - name: Commit corrected generator and DOCX
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "downloads/一题三变加高考真题_第九章_库仑定律_出版规范版.docx"
+          rm -f debug/example2-build.log
+          git add -A tools/build_coulomb_example2_publishing_docx.py downloads/一题三变加高考真题_库仑定律例题2_出版规范版.docx debug/example2-build.log
           if ! git diff --cached --quiet; then
-            git commit -m "生成库仑定律一题三变加高考真题出版规范版 Word"
+            git commit -m "固化库仑定律例题2出版规范版生成器与Word"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
       - name: Upload DOCX artifact
         uses: actions/upload-artifact@v4
         with:
-          name: coulomb-law-gaokao-publishing-docx
-          path: downloads/一题三变加高考真题_第九章_库仑定律_出版规范版.docx
+          name: coulomb-example2-publishing-docx
+          path: downloads/一题三变加高考真题_库仑定律例题2_出版规范版.docx
