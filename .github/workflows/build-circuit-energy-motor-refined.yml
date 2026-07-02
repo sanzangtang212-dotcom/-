@@ -51,15 +51,35 @@ jobs:
           p.write_text(text, encoding='utf-8')
           PY
 
-      - name: Build and self-check DOCX
+      - name: Build and inspect DOCX
         id: build
         shell: bash
         run: |
           set +e
-          python tools/build_circuit_energy_motor_refined.py > circuit-energy-build.log 2>&1
+          python -O tools/build_circuit_energy_motor_refined.py > circuit-energy-build.log 2>&1
           status=$?
+          python - <<'PY' >> circuit-energy-build.log 2>&1
+          from pathlib import Path
+          from zipfile import ZipFile
+          p = Path('downloads/一题三变加高考真题_第十二章_电路中的能量转化_精修版.docx')
+          if not p.exists():
+              print('DOCX_NOT_CREATED')
+              raise SystemExit(1)
+          with ZipFile(p) as z:
+              xml = z.read('word/document.xml').decode('utf-8')
+          forbidden = '⁰¹²³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ'
+          offenders = sorted(set(ch for ch in xml if ch in forbidden))
+          print('OFFENDERS=', [f'U+{ord(ch):04X}:{ch}' for ch in offenders])
+          for ch in offenders:
+              pos = xml.find(ch)
+              print('CONTEXT', repr(xml[max(0,pos-80):pos+80]))
+          if offenders:
+              raise SystemExit(1)
+          PY
+          inspect_status=$?
+          if [ "$status" -eq 0 ] && [ "$inspect_status" -eq 0 ]; then final_status=0; else final_status=1; fi
           cat circuit-energy-build.log
-          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "status=$final_status" >> "$GITHUB_OUTPUT"
           exit 0
 
       - name: Commit diagnostic log
@@ -71,7 +91,7 @@ jobs:
           cp circuit-energy-build.log debug/circuit-energy-build.log
           git add debug/circuit-energy-build.log
           if ! git diff --cached --quiet; then
-            git commit -m "更新电路中的能量转化Word构建日志"
+            git commit -m "定位电路中的能量转化Word伪角标"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
