@@ -1,4 +1,4 @@
-name: Build corrected Coulomb DOCX
+name: Build compact OMML Coulomb DOCX
 
 on:
   pull_request:
@@ -29,14 +29,14 @@ jobs:
       - name: Build DOCX
         run: python tools/build_coulomb_high_quality_docx.py
 
-      - name: Validate DOCX package and core OMML formatting
+      - name: Validate compact OMML formatting
         run: |
           python - <<'PY'
           from pathlib import Path
           from zipfile import ZipFile
           import xml.etree.ElementTree as ET
 
-          p = Path('downloads/一题三变_第九章_库仑定律_高质量修正版.docx')
+          p = Path('downloads/一题三变_第九章_库仑定律_角标紧凑修正版.docx')
           assert p.exists() and p.stat().st_size > 5000, p
           with ZipFile(p) as z:
               required = {
@@ -47,9 +47,16 @@ jobs:
               xml = z.read('word/document.xml').decode('utf-8')
               ET.fromstring(xml)
               ET.fromstring(z.read('word/styles.xml'))
-              assert '<m:sSub>' in xml
+              assert xml.count('<m:sSub>') >= 10
+              assert xml.count('<m:sSup>') >= 10
+              assert xml.count('<m:oMath>') >= 20
               assert '<m:sty m:val="p"/>' in xml
               assert 'Times New Roman' in xml
+              # 科学计数法与多字符角标不得再用 Unicode 伪上标、伪下标或下划线模拟。
+              forbidden = '⁰¹³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ_'
+              assert not any(ch in xml for ch in forbidden)
+              assert '<m:t>GD</m:t>' in xml
+              assert '<m:t>GH</m:t>' in xml
           print(f'validated: {p} ({p.stat().st_size} bytes)')
           PY
 
@@ -57,14 +64,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "downloads/一题三变_第九章_库仑定律_高质量修正版.docx"
+          git add "downloads/一题三变_第九章_库仑定律_角标紧凑修正版.docx"
           if ! git diff --cached --quiet; then
-            git commit -m "生成库仑定律一题三变高质量修正版 Word"
+            git commit -m "生成库仑定律角标紧凑修正版 Word"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
       - name: Upload DOCX artifact
         uses: actions/upload-artifact@v4
         with:
-          name: coulomb-law-corrected-docx
-          path: downloads/一题三变_第九章_库仑定律_高质量修正版.docx
+          name: coulomb-law-compact-omml-docx
+          path: downloads/一题三变_第九章_库仑定律_角标紧凑修正版.docx
