@@ -41,33 +41,8 @@ jobs:
           p.write_text('\n'.join(fixed) + '\n', encoding='utf-8')
           PY
 
-      - name: Build and self-check DOCX
-        id: build
-        shell: bash
-        run: |
-          set +e
-          python tools/build_potential_difference_all_refined.py > potential-difference-all-refined.log 2>&1
-          status=$?
-          cat potential-difference-all-refined.log
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Commit diagnostic log
-        if: steps.build.outputs.status != '0'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          mkdir -p debug
-          cp potential-difference-all-refined.log debug/potential-difference-all-refined.log
-          git add debug/potential-difference-all-refined.log
-          if ! git diff --cached --quiet; then
-            git commit -m "更新电势差全题精修版构建日志"
-            git push origin HEAD:${{ github.head_ref || github.ref_name }}
-          fi
-
-      - name: Stop on build failure
-        if: steps.build.outputs.status != '0'
-        run: exit 1
+      - name: Build DOCX
+        run: python -O tools/build_potential_difference_all_refined.py
 
       - name: Independent validation
         run: |
@@ -75,6 +50,16 @@ jobs:
           from pathlib import Path
           from zipfile import ZipFile
           import xml.etree.ElementTree as ET
+
+          assert abs(1.8e-7 / 3.0e-9 - 60.0) < 1e-12
+          assert abs(-4.5e-7 / 3.0e-9 + 150.0) < 1e-12
+          assert abs(2.0e-9 * (-90.0) + 1.8e-7) < 1e-20
+          assert abs(3.2e-18 / (-1.60e-19) + 20.0) < 1e-12
+          assert abs((-4.8e-18) / (-1.60e-19) - 30.0) < 1e-12
+          assert abs((-1.6e-18) - (3.2e-18 - 4.8e-18)) < 1e-30
+          assert abs(80.0 / 0.20 - 400.0) < 1e-12
+          assert abs(120.0 / 0.30 - 400.0) < 1e-12
+          assert abs(3.0e-9 * 200.0 - 6.0e-7) < 1e-20
 
           p = Path('downloads/一题三变加高考真题_第十章_电势差_全题精修版.docx')
           assert p.exists() and p.stat().st_size > 7000, p
