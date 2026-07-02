@@ -35,46 +35,16 @@ jobs:
           p = Path('tools/build_coulomb_example2_publishing_docx.py')
           text = p.read_text(encoding='utf-8')
           replacements = [
-              (
-                  "cn(' 并背离三角形中心。'))\nparts.append(label('【解析】'))",
-                  "cn(' 并背离三角形中心。')))\nparts.append(label('【解析】'))"
-              ),
-              (
-                  "cn(' 的数值。'))\nparts.append(plain('（3）说明所得Q与三角形边长L是否有关",
-                  "cn(' 的数值。')))\nparts.append(plain('（3）说明所得Q与三角形边长L是否有关"
-              ),
-              (
-                  "cn(' 为负电荷。'))\nparts.append(body(cn('（2）')",
-                  "cn(' 为负电荷。')))\nparts.append(body(cn('（2）')"
-              ),
-              (
-                  "sci_text('1.2', '-6', 'C'), cn('。'))\nparts.append(plain('（3）Q与L无关",
-                  "sci_text('1.2', '-6', 'C'), cn('。')))\nparts.append(plain('（3）Q与L无关"
-              ),
-              (
-                  "assert xml.count('<w:vertAlign w:val=\"superscript\"/>') >= 8",
-                  "assert '<w:vertAlign w:val=\"superscript\"/>' in xml"
-              ),
-              (
-                  "assert xml.count('<w:vertAlign w:val=\"subscript\"/>') >= 15",
-                  "assert '<w:vertAlign w:val=\"subscript\"/>' in xml"
-              ),
-              (
-                  "assert xml.count('<m:sSub>') >= 20",
-                  "assert '<m:sSub>' in xml"
-              ),
-              (
-                  "assert xml.count('<m:sSup>') >= 10",
-                  "assert '<m:sSup>' in xml"
-              ),
-              (
-                  "assert xml.count('<m:f>') >= 18",
-                  "assert '<m:f>' in xml"
-              ),
-              (
-                  "assert xml.count('<m:oMathPara>') >= 20",
-                  "assert '<m:oMathPara>' in xml"
-              ),
+              ("cn(' 并背离三角形中心。'))\nparts.append(label('【解析】'))", "cn(' 并背离三角形中心。')))\nparts.append(label('【解析】'))"),
+              ("cn(' 的数值。'))\nparts.append(plain('（3）说明所得Q与三角形边长L是否有关", "cn(' 的数值。')))\nparts.append(plain('（3）说明所得Q与三角形边长L是否有关"),
+              ("cn(' 为负电荷。'))\nparts.append(body(cn('（2）')", "cn(' 为负电荷。')))\nparts.append(body(cn('（2）')"),
+              ("sci_text('1.2', '-6', 'C'), cn('。'))\nparts.append(plain('（3）Q与L无关", "sci_text('1.2', '-6', 'C'), cn('。')))\nparts.append(plain('（3）Q与L无关"),
+              ("assert xml.count('<w:vertAlign w:val=\"superscript\"/>') >= 8", "assert '<w:vertAlign w:val=\"superscript\"/>' in xml"),
+              ("assert xml.count('<w:vertAlign w:val=\"subscript\"/>') >= 15", "assert '<w:vertAlign w:val=\"subscript\"/>' in xml"),
+              ("assert xml.count('<m:sSub>') >= 20", "assert '<m:sSub>' in xml"),
+              ("assert xml.count('<m:sSup>') >= 10", "assert '<m:sSup>' in xml"),
+              ("assert xml.count('<m:f>') >= 18", "assert '<m:f>' in xml"),
+              ("assert xml.count('<m:oMathPara>') >= 20", "assert '<m:oMathPara>' in xml"),
           ]
           for old, new in replacements:
               if old in text:
@@ -142,13 +112,14 @@ jobs:
           print(f'validated: {p} ({p.stat().st_size} bytes)')
           PY
 
-      - name: Commit generated DOCX to source branch
+      - name: Commit corrected generator and DOCX
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "downloads/一题三变加高考真题_库仑定律例题2_出版规范版.docx"
+          rm -f debug/example2-build.log
+          git add -A tools/build_coulomb_example2_publishing_docx.py downloads/一题三变加高考真题_库仑定律例题2_出版规范版.docx debug/example2-build.log
           if ! git diff --cached --quiet; then
-            git commit -m "生成库仑定律例题2一题三变加高考真题出版规范版 Word"
+            git commit -m "固化库仑定律例题2出版规范版生成器与Word"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
