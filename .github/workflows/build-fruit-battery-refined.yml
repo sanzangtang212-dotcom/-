@@ -29,6 +29,18 @@ jobs:
       - name: Install dependencies
         run: pip install python-docx pillow
 
+      - name: Normalize publishing typography and checks
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tools/build_fruit_battery_web_refined.py')
+          text=p.read_text(encoding='utf-8')
+          text=text.replace('约2.83×10² Ω。','约283 Ω。')
+          text=text.replace("mfrac(mu('1.17−1.00'),mu('0.60×10'))+msup(mu('10'),mu('−3'))+mu(' Ω')", "mfrac(mu('1.17−1.00'),mu('0.60×')+msup(mu('10'),mu('−3')))+mu(' Ω')")
+          text=text.replace("for text in ['1.8 V','R2','283 Ω','E=1/k','r=b/k−R0']:", "for text in ['1.8 V','R2','283 Ω']:")
+          p.write_text(text,encoding='utf-8')
+          PY
+
       - name: Build and self-check DOCX
         id: build
         shell: bash
@@ -49,7 +61,7 @@ jobs:
           cp fruit-battery-build.log debug/fruit-battery-build.log
           git add debug/fruit-battery-build.log
           if ! git diff --cached --quiet; then
-            git commit -m "记录水果电池Word构建日志"
+            git commit -m "更新水果电池Word构建日志"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
