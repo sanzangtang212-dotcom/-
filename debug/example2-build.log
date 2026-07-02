@@ -1,4 +1,4 @@
-  File "/home/runner/work/-/-/tools/build_coulomb_example2_publishing_docx.py", line 253
-    parts.append(body(cn('静电力大小为 '), roman('0.17 N'),
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/-/-/tools/build_coulomb_example2_publishing_docx.py", line 304
+    parts.append(body(cn('（2）当 '), qtxt(), roman('='), sci_text('2.0', '-6', 'C'), cn(' 时，求 '), phys('Q'), cn(' 的数值。'))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 SyntaxError: invalid syntax. Perhaps you forgot a comma?
