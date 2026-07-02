@@ -35,7 +35,6 @@ jobs:
           p = Path('tools/build_potential_field_relation_docx.py')
           text = p.read_text(encoding='utf-8')
 
-          # 多表征表格改用“倍数”表述，避免普通文本伪下标。
           text = text.replace(
               "parts.append(p_text('同一带正电粒子均从正极板旁由静止释放，不计重力。以板间电压为U₀、板间距为d₀的方案A作为参照，粒子所受静电力为F₀，到达负极板时的速度为v₀。各方案参数如下表。'))",
               "parts.append(p_text('同一带正电粒子均从正极板旁由静止释放，不计重力。以方案A作为参照，比较其他方案中板间电压、板间距、电场强度、静电力和末速度相对于方案A的倍数。'))"
@@ -65,9 +64,16 @@ jobs:
               "for text in ['40 m/s', '30 m/s', '28.3 m/s', 'A、C、D三方案静电力相同', '实际时间为'] :"
           )
 
-          # 兜底：普通文本中不保留 Unicode 伪上下标。
-          for old, new in [('U₀','U0'), ('d₀','d0'), ('E₀','E0'), ('F₀','F0'), ('v₀','v0'), ('²','2')]:
-              text = text.replace(old, new)
+          # 仅清理生成文档的代码区域；保留自检区的 forbidden 字符集合。
+          marker = '# ============================================================\n# 强制自检'
+          before, after = text.split(marker, 1)
+          mapping = {
+              '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁻':'−',
+              '₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9','ₑ':'e','ₚ':'p'
+          }
+          for old, new in mapping.items():
+              before = before.replace(old, new)
+          text = before + marker + after
 
           p.write_text(text, encoding='utf-8')
           PY
@@ -88,7 +94,7 @@ jobs:
           cp potential-field-build.log debug/potential-field-build.log
           git add debug/potential-field-build.log
           if ! git diff --cached --quiet; then
-            git commit -m "记录电势差与电场强度关系Word构建日志"
+            git commit -m "更新电势差与电场强度关系Word构建日志"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
