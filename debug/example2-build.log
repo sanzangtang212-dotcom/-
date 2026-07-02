@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "/home/runner/work/-/-/tools/build_coulomb_example2_publishing_docx.py", line 466, in <module>
-    assert xml.count('<w:vertAlign w:val="superscript"/>') >= 8
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError

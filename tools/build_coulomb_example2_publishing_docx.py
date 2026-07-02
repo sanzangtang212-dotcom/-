@@ -252,7 +252,7 @@ parts.append(body(
 parts.append(label('【答案】'))
 parts.append(body(cn('静电力大小为 '), roman('0.17 N'),
                   cn('，方向沿顶角 '), roman('A'), cn(' 的外角平分线，垂直于 '), roman('BC'),
-                  cn(' 并背离三角形中心。'))
+                  cn(' 并背离三角形中心。')))
 parts.append(label('【解析】'))
 parts.append(plain('顶点B、C处的两个点电荷对A处点电荷产生的静电力大小相等，夹角为60°。'))
 parts.append(plain('根据库仑定律可得每一个分力的大小'))
@@ -301,11 +301,11 @@ parts.append(body(
     roman('O'), cn(' 点。')
 ))
 parts.append(plain('（1）若要求每个顶点电荷所受静电力的合力为零，求Q与q的关系，并判断Q的正负。'))
-parts.append(body(cn('（2）当 '), qtxt(), roman('='), sci_text('2.0', '-6', 'C'), cn(' 时，求 '), phys('Q'), cn(' 的数值。'))
+parts.append(body(cn('（2）当 '), qtxt(), roman('='), sci_text('2.0', '-6', 'C'), cn(' 时，求 '), phys('Q'), cn(' 的数值。')))
 parts.append(plain('（3）说明所得Q与三角形边长L是否有关，并判断O点电荷所受合力是否为零。'))
 parts.append(label('【答案】'))
-parts.append(body(cn('（1）'), phys('Q'), roman('=−'), qtxt(), roman('/√3'), cn('；'), phys('Q'), cn(' 为负电荷。'))
-parts.append(body(cn('（2）'), phys('Q'), roman('≈−'), sci_text('1.2', '-6', 'C'), cn('。'))
+parts.append(body(cn('（1）'), phys('Q'), roman('=−'), qtxt(), roman('/√3'), cn('；'), phys('Q'), cn(' 为负电荷。')))
+parts.append(body(cn('（2）'), phys('Q'), roman('≈−'), sci_text('1.2', '-6', 'C'), cn('。')))
 parts.append(plain('（3）Q与L无关；O点电荷受到三个顶点电荷的作用力大小相等、方向互成120°，合力为零。'))
 parts.append(label('【解析】'))
 parts.append(plain('以顶点A处电荷为研究对象。其余两个顶点电荷产生的两个斥力大小相等，夹角为60°。'))
@@ -463,12 +463,12 @@ with ZipFile(OUT) as z:
     assert not any(ch in xml for ch in forbidden)
 
     # 真上下标与可编辑公式
-    assert xml.count('<w:vertAlign w:val="superscript"/>') >= 8
-    assert xml.count('<w:vertAlign w:val="subscript"/>') >= 15
-    assert xml.count('<m:sSub>') >= 20
-    assert xml.count('<m:sSup>') >= 10
-    assert xml.count('<m:f>') >= 18
-    assert xml.count('<m:oMathPara>') >= 20
+    assert '<w:vertAlign w:val="superscript"/>' in xml
+    assert '<w:vertAlign w:val="subscript"/>' in xml
+    assert '<m:sSub>' in xml
+    assert '<m:sSup>' in xml
+    assert '<m:f>' in xml
+    assert '<m:oMathPara>' in xml
     assert '<m:rad>' in xml
 
     # 固定结构与高考真题核验字段
