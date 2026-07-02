@@ -29,6 +29,28 @@ jobs:
       - name: Install dependencies
         run: pip install python-docx pillow
 
+      - name: Normalize publishing typography
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/build_circuit_energy_motor_refined.py')
+          text = p.read_text(encoding='utf-8')
+
+          old1 = "add_body(doc, '如图，电源电压恒为220 V，保护电阻R=10 Ω，电动机线圈电阻r=1.0 Ω。电动机正常工作时，电压表测得电动机两端电压为170 V。电动机匀速提升质量为10 kg的重物，不计摩擦，g取10 m/s²。')"
+          new1 = "p = add_body(doc, '', indent=True)\nadd_cn(p, '如图，电源电压恒为220 V，保护电阻R=10 Ω，电动机线圈电阻r=1.0 Ω。电动机正常工作时，电压表测得电动机两端电压为170 V。电动机匀速提升质量为10 kg的重物，不计摩擦，g取')\nadd_roman(p, '10 m/s')\nadd_roman(p, '2', sup=True)\nadd_cn(p, '。')"
+          text = text.replace(old1, new1)
+
+          old2 = "add_formula(doc, v() + mu('=') + mfrac(mu('825 W'), mdelim(mu('10 kg×10 m/s²'))) + mu('=8.25 m/s'))"
+          new2 = "add_formula(doc, v() + mu('=') + mfrac(mu('825 W'), mdelim(mu('10 kg×10 m/') + msup(mu('s'), mu('2')))) + mu('=8.25 m/s'))"
+          text = text.replace(old2, new2)
+
+          old3 = "add_body(doc, '某节水喷灌系统中，水以15 m/s的速度水平喷出，每秒喷出水的质量为2.0 kg。喷出的水从井下抽取，喷口离水面的高度保持3.75 m不变。水泵由电动机带动，电动机正常工作时输入电压为220 V，输入电流为2.0 A。不计电动机的摩擦损耗，电动机的输出功率等于水泵的输入功率。水泵效率为75%，忽略水在管道中运动的机械能损失，g取10 m/s²。下列说法正确的是（　　）')"
+          new3 = "p = add_body(doc, '', indent=True)\nadd_cn(p, '某节水喷灌系统中，水以15 m/s的速度水平喷出，每秒喷出水的质量为2.0 kg。喷出的水从井下抽取，喷口离水面的高度保持3.75 m不变。水泵由电动机带动，电动机正常工作时输入电压为220 V，输入电流为2.0 A。不计电动机的摩擦损耗，电动机的输出功率等于水泵的输入功率。水泵效率为75%，忽略水在管道中运动的机械能损失，g取')\nadd_roman(p, '10 m/s')\nadd_roman(p, '2', sup=True)\nadd_cn(p, '。下列说法正确的是（　　）')"
+          text = text.replace(old3, new3)
+
+          p.write_text(text, encoding='utf-8')
+          PY
+
       - name: Build and self-check DOCX
         id: build
         shell: bash
@@ -49,7 +71,7 @@ jobs:
           cp circuit-energy-build.log debug/circuit-energy-build.log
           git add debug/circuit-energy-build.log
           if ! git diff --cached --quiet; then
-            git commit -m "记录电路中的能量转化Word构建日志"
+            git commit -m "更新电路中的能量转化Word构建日志"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
