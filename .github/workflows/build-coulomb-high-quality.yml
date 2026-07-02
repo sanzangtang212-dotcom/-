@@ -34,10 +34,27 @@ jobs:
           from pathlib import Path
           p = Path('tools/build_coulomb_example2_publishing_docx.py')
           text = p.read_text(encoding='utf-8')
-          old = "cn(' 并背离三角形中心。'))\nparts.append(label('【解析】'))"
-          new = "cn(' 并背离三角形中心。')))\nparts.append(label('【解析】'))"
-          if old in text:
-              text = text.replace(old, new, 1)
+          replacements = [
+              (
+                  "cn(' 并背离三角形中心。'))\nparts.append(label('【解析】'))",
+                  "cn(' 并背离三角形中心。')))\nparts.append(label('【解析】'))"
+              ),
+              (
+                  "cn(' 的数值。'))\nparts.append(plain('（3）说明所得Q与三角形边长L是否有关",
+                  "cn(' 的数值。')))\nparts.append(plain('（3）说明所得Q与三角形边长L是否有关"
+              ),
+              (
+                  "cn(' 为负电荷。'))\nparts.append(body(cn('（2）')",
+                  "cn(' 为负电荷。')))\nparts.append(body(cn('（2）')"
+              ),
+              (
+                  "sci_text('1.2', '-6', 'C'), cn('。'))\nparts.append(plain('（3）Q与L无关",
+                  "sci_text('1.2', '-6', 'C'), cn('。')))\nparts.append(plain('（3）Q与L无关"
+              ),
+          ]
+          for old, new in replacements:
+              if old in text:
+                  text = text.replace(old, new, 1)
           p.write_text(text, encoding='utf-8')
           PY
           set +e
