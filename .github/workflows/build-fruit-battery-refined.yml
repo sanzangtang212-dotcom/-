@@ -1,0 +1,116 @@
+name: Build refined fruit-battery DOCX
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/build_fruit_battery_web_refined.py'
+      - '.github/workflows/build-fruit-battery-refined.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install python-docx pillow
+
+      - name: Normalize publishing typography and checks
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tools/build_fruit_battery_web_refined.py')
+          text=p.read_text(encoding='utf-8')
+          text=text.replace('约2.83×10² Ω。','约283 Ω。')
+          text=text.replace("mfrac(mu('1.17−1.00'),mu('0.60×10'))+msup(mu('10'),mu('−3'))+mu(' Ω')", "mfrac(mu('1.17−1.00'),mu('0.60×')+msup(mu('10'),mu('−3')))+mu(' Ω')")
+          text=text.replace("for text in ['1.8 V','R2','283 Ω','E=1/k','r=b/k−R0']:", "for text in ['1.8 V','R2','283 Ω']:")
+          p.write_text(text,encoding='utf-8')
+          PY
+
+      - name: Build and self-check DOCX
+        id: build
+        shell: bash
+        run: |
+          set +e
+          python tools/build_fruit_battery_web_refined.py > fruit-battery-build.log 2>&1
+          status=$?
+          cat fruit-battery-build.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Commit diagnostic log
+        if: steps.build.outputs.status != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p debug
+          cp fruit-battery-build.log debug/fruit-battery-build.log
+          git add debug/fruit-battery-build.log
+          if ! git diff --cached --quiet; then
+            git commit -m "更新水果电池Word构建日志"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Stop on build failure
+        if: steps.build.outputs.status != '0'
+        run: exit 1
+
+      - name: Independent validation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import xml.etree.ElementTree as ET
+
+          p=Path('downloads/参考案例2_测量水果电池的电动势和内阻_网络精选递进版.docx')
+          assert p.exists() and p.stat().st_size>25000,p
+          with ZipFile(p) as z:
+              names=set(z.namelist())
+              assert 'word/document.xml' in names
+              assert 'word/styles.xml' in names
+              assert len([n for n in names if n.startswith('word/media/')])>=4
+              xml=z.read('word/document.xml').decode('utf-8')
+              ET.fromstring(xml)
+              forbidden='⁰¹²³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ'
+              assert not any(ch in xml for ch in forbidden)
+              assert xml.count('【题目】')==3
+              assert xml.count('【答案】')==3
+              assert xml.count('【解析】')==3
+              assert '<m:oMathPara' in xml and '<m:f>' in xml and '<m:sSub>' in xml and '<m:sSup>' in xml
+              for text in ['1.8 V','R2','283 Ω']:
+                  assert text in xml
+              for bad in ['TODO','待补充','XXXX','�']:
+                  assert bad not in xml
+          print(f'validated: {p} ({p.stat().st_size} bytes)')
+          PY
+
+      - name: Commit generated DOCX
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f debug/fruit-battery-build.log
+          git add -A tools/build_fruit_battery_web_refined.py "downloads/参考案例2_测量水果电池的电动势和内阻_网络精选递进版.docx" debug/fruit-battery-build.log
+          if ! git diff --cached --quiet; then
+            git commit -m "生成参考案例2水果电池网络精选递进版Word"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fruit-battery-refined
+          path: downloads/参考案例2_测量水果电池的电动势和内阻_网络精选递进版.docx
