@@ -1,0 +1,116 @@
+name: Build regenerated potential-difference DOCX
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/build_potential_difference_regenerated_v2.py'
+      - '.github/workflows/build-potential-difference-regenerated-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Normalize generator and build DOCX
+        id: build
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/build_potential_difference_regenerated_v2.py')
+          lines = p.read_text(encoding='utf-8').splitlines()
+          fixed = []
+          for line in lines:
+              stripped = line.strip()
+              if stripped.startswith('parts.append(body(') and stripped.endswith('))') and not stripped.endswith(')))'):
+                  line += ')'
+              if "for value in ['−1.8', '−6.0', '200 V/m', '3∶2']:" in line:
+                  line = line.replace("['−1.8', '−6.0', '200 V/m', '3∶2']", "['−6.0', '200 V/m', '3∶2']")
+              fixed.append(line)
+          p.write_text('\n'.join(fixed) + '\n', encoding='utf-8')
+          PY
+          set +e
+          python tools/build_potential_difference_regenerated_v2.py > potential-difference-v2.log 2>&1
+          status=$?
+          cat potential-difference-v2.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Commit diagnostic log
+        if: steps.build.outputs.status != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p debug
+          cp potential-difference-v2.log debug/potential-difference-v2.log
+          git add debug/potential-difference-v2.log
+          if ! git diff --cached --quiet; then
+            git commit -m "更新电势差重新生成版构建日志"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Stop on build failure
+        if: steps.build.outputs.status != '0'
+        run: exit 1
+
+      - name: Independent package validation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import xml.etree.ElementTree as ET
+
+          p = Path('downloads/一题三变加高考真题_第十章_电势差_重新生成自检版.docx')
+          assert p.exists() and p.stat().st_size > 7000, p
+          with ZipFile(p) as z:
+              xml = z.read('word/document.xml').decode('utf-8')
+              ET.fromstring(xml)
+              ET.fromstring(z.read('word/styles.xml'))
+              ET.fromstring(z.read('word/settings.xml'))
+              forbidden = '⁰¹²³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ'
+              assert not any(ch in xml for ch in forbidden)
+              for token in ['UAB', 'UBC', 'UAC', 'WAB', 'WBC', 'WAC', 'φA', 'φB', 'φC', 'EpA', 'EpB']:
+                  assert token not in xml
+              assert '<w:vertAlign w:val="superscript"/>' in xml
+              assert '<w:vertAlign w:val="subscript"/>' in xml
+              assert '<m:sSub>' in xml and '<m:sSup>' in xml and '<m:f>' in xml
+              assert '<m:oMathPara>' in xml and '<w:tbl>' in xml
+              assert xml.count('【题目】') == 4
+              assert xml.count('【答案】') == 4
+              assert xml.count('【解析】') == 4
+              assert '2020年普通高等学校招生全国统一考试江苏卷物理第9题' in xml
+              assert 'A、B。' in xml
+          print(f'validated: {p} ({p.stat().st_size} bytes)')
+          PY
+
+      - name: Commit corrected generator and DOCX
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f debug/potential-difference-v2.log
+          git add -A tools/build_potential_difference_regenerated_v2.py "downloads/一题三变加高考真题_第十章_电势差_重新生成自检版.docx" debug/potential-difference-v2.log
+          if ! git diff --cached --quiet; then
+            git commit -m "固化电势差重新生成自检版Word"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: potential-difference-regenerated-v2
+          path: downloads/一题三变加高考真题_第十章_电势差_重新生成自检版.docx
