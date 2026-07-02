@@ -1,10 +1,10 @@
-name: Build potential-difference publishing DOCX
+name: Build potential-field relation publishing DOCX
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - 'tools/build_potential_difference_example_docx.py'
+      - 'tools/build_potential_field_relation_docx.py'
       - '.github/workflows/build-coulomb-high-quality.yml'
   workflow_dispatch:
 
@@ -26,37 +26,59 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Patch generator and build DOCX
+      - name: Normalize inline indices and build DOCX
         id: build
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
-          p = Path('tools/build_potential_difference_example_docx.py')
+          p = Path('tools/build_potential_field_relation_docx.py')
           text = p.read_text(encoding='utf-8')
-          replacements = [
-              (
-                  "cn(' 的正点电荷从A点移动到C点，求静电力做的功。'))\nparts.append(plain('（4）若A、B、C三点位于同一条电场线上",
-                  "cn(' 的正点电荷从A点移动到C点，求静电力做的功。')))\nparts.append(plain('（4）若A、B、C三点位于同一条电场线上"
-              ),
-              (
-                  "cn(' 的正点电荷从A点移动到C点时静电力做的功。'))\nparts.append(label('【答案】'))",
-                  "cn(' 的正点电荷从A点移动到C点时静电力做的功。')))\nparts.append(label('【答案】'))"
-              ),
-              (
-                  "for text in ['φC>φA>φB', 'UAB=30 V', 'UAB=−20 V', 'E=200 V/m', 'CA∶AB=3∶2']:",
-                  "for text in ['φC', '30 V', '−20 V', '200 V/m', '3∶2']:"
-              ),
-          ]
-          for old, new in replacements:
-              if old in text:
-                  text = text.replace(old, new, 1)
+
+          text = text.replace(
+              "parts.append(p_text('同一带正电粒子均从正极板旁由静止释放，不计重力。以板间电压为U₀、板间距为d₀的方案A作为参照，粒子所受静电力为F₀，到达负极板时的速度为v₀。各方案参数如下表。'))",
+              "parts.append(p_text('同一带正电粒子均从正极板旁由静止释放，不计重力。以方案A作为参照，比较其他方案中板间电压、板间距、电场强度、静电力和末速度相对于方案A的倍数。'))"
+          )
+          text = text.replace(
+              "[hei('方案', size=22), hei('U/U₀', size=22), hei('d/d₀', size=22), hei('E/E₀', size=22), hei('F/F₀', size=22), hei('v/v₀', size=22)],",
+              "[hei('方案', size=22), hei('电压倍数', size=22), hei('距离倍数', size=22), hei('场强倍数', size=22), hei('静电力倍数', size=22), hei('速度倍数', size=22)],"
+          )
+          text = text.replace(
+              "parts.append(p_text('（1）推导E/E₀、F/F₀和v/v₀与U/U₀、d/d₀的关系。'))",
+              "parts.append(p_text('（1）推导场强倍数、静电力倍数和速度倍数与电压倍数、距离倍数的关系。'))"
+          )
+          text = text.replace(
+              "parts.append(p_text('（1）E/E₀=(U/U₀)/(d/d₀)，F/F₀=E/E₀，v/v₀=√(U/U₀)。'))",
+              "parts.append(p_text('（1）场强倍数等于电压倍数与距离倍数之比，静电力倍数等于场强倍数，速度倍数等于电压倍数的平方根。'))"
+          )
+          text = text.replace(
+              "parts.append(p_runs([cn('C．粒子在两板间的加速度为 '), phys('a'), roman('='), roman('2'), variable_with_sub('v', '0'), roman('²/'), phys('L')]))",
+              "parts.append(p_runs([cn('C．粒子在两板间的加速度为 '), phys('a'), roman('='), roman('2'), variable_with_sub('v', '0'), roman('2', sup=True), roman('/'), phys('L')]))"
+          )
+          text = text.replace(
+              "parts.append(p_text('根据动能定理qU=mv²/2可得'))",
+              "parts.append(p_text('根据动能定理可得'))"
+          )
+          text = text.replace("'40 m/s'", "'末速度不变'")
+          text = text.replace("'L/(2v₀)'", "'实际时间为'")
+
+          marker = '# ============================================================\n# 强制自检'
+          before, after = text.split(marker, 1)
+          mapping = {
+              '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁻':'−',
+              '₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9','ₑ':'e','ₚ':'p'
+          }
+          for old, new in mapping.items():
+              before = before.replace(old, new)
+          text = before + marker + after
+
           p.write_text(text, encoding='utf-8')
           PY
+
           set +e
-          python tools/build_potential_difference_example_docx.py > potential-build.log 2>&1
+          python tools/build_potential_field_relation_docx.py > potential-field-build.log 2>&1
           status=$?
-          cat potential-build.log
+          cat potential-field-build.log
           echo "status=$status" >> "$GITHUB_OUTPUT"
           exit 0
 
@@ -66,10 +88,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           mkdir -p debug
-          cp potential-build.log debug/potential-build.log
-          git add debug/potential-build.log
+          cp potential-field-build.log debug/potential-field-build.log
+          git add debug/potential-field-build.log
           if ! git diff --cached --quiet; then
-            git commit -m "更新电势差 Word 构建自检日志"
+            git commit -m "更新电势差与电场强度关系Word构建日志"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
@@ -84,7 +106,7 @@ jobs:
           from zipfile import ZipFile
           import xml.etree.ElementTree as ET
 
-          p = Path('downloads/一题三变加高考真题_第十章_电势差_出版规范版.docx')
+          p = Path('downloads/一题三变加高考真题_第十章_电势差与电场强度的关系_出版规范版.docx')
           assert p.exists() and p.stat().st_size > 7000, p
           with ZipFile(p) as z:
               required = {
@@ -97,21 +119,25 @@ jobs:
               ET.fromstring(xml)
               ET.fromstring(z.read('word/styles.xml'))
               ET.fromstring(z.read('word/settings.xml'))
+
               forbidden = '⁰¹²³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ'
               assert not any(ch in xml for ch in forbidden)
               assert '<w:vertAlign w:val="superscript"/>' in xml
               assert '<w:vertAlign w:val="subscript"/>' in xml
               assert '<m:sSub>' in xml and '<m:sSup>' in xml
-              assert '<m:f>' in xml and '<m:oMathPara>' in xml
-              assert '<w:tbl>' in xml
+              assert '<m:f>' in xml and '<m:rad>' in xml
+              assert '<m:oMathPara>' in xml and '<w:tbl>' in xml
+              assert 'Book Antiqua' in xml and 'Times New Roman' in xml
+
               assert xml.count('【题目】') == 4
               assert xml.count('【答案】') == 4
               assert xml.count('【解析】') == 4
-              assert '2020年普通高等学校招生全国统一考试江苏卷物理第9题' in xml
-              assert 'A、B。' in xml
-              for text in ['φC', '30 V', '−20 V', '200 V/m', '3∶2']:
-                  assert text in xml
-              assert 'TODO' not in xml and '�' not in xml
+              assert '2022年浙江省6月普通高校招生选考科目考试物理第9题' in xml
+              assert 'C。' in xml
+              for value in ['末速度不变', '30 m/s', '28.3 m/s', '实际时间为']:
+                  assert value in xml
+              for bad in ['TODO', '待补充', 'XXXX', '�']:
+                  assert bad not in xml
           print(f'validated: {p} ({p.stat().st_size} bytes)')
           PY
 
@@ -119,15 +145,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          rm -f debug/potential-build.log
-          git add -A tools/build_potential_difference_example_docx.py "downloads/一题三变加高考真题_第十章_电势差_出版规范版.docx" debug/potential-build.log
+          rm -f debug/potential-field-build.log
+          git add -A tools/build_potential_field_relation_docx.py "downloads/一题三变加高考真题_第十章_电势差与电场强度的关系_出版规范版.docx" debug/potential-field-build.log
           if ! git diff --cached --quiet; then
-            git commit -m "固化电势差出版规范版生成器与Word"
+            git commit -m "固化电势差与电场强度关系出版规范版Word"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
       - name: Upload DOCX artifact
         uses: actions/upload-artifact@v4
         with:
-          name: potential-difference-publishing-docx
-          path: downloads/一题三变加高考真题_第十章_电势差_出版规范版.docx
+          name: potential-field-relation-publishing-docx
+          path: downloads/一题三变加高考真题_第十章_电势差与电场强度的关系_出版规范版.docx
