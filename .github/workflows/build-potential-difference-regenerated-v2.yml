@@ -26,10 +26,22 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Build and self-check DOCX
+      - name: Normalize generator and build DOCX
         id: build
         shell: bash
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/build_potential_difference_regenerated_v2.py')
+          lines = p.read_text(encoding='utf-8').splitlines()
+          fixed = []
+          for line in lines:
+              stripped = line.strip()
+              if stripped.startswith('parts.append(body(') and stripped.endswith('))') and not stripped.endswith(')))'):
+                  line += ')'
+              fixed.append(line)
+          p.write_text('\n'.join(fixed) + '\n', encoding='utf-8')
+          PY
           set +e
           python tools/build_potential_difference_regenerated_v2.py > potential-difference-v2.log 2>&1
           status=$?
@@ -46,7 +58,7 @@ jobs:
           cp potential-difference-v2.log debug/potential-difference-v2.log
           git add debug/potential-difference-v2.log
           if ! git diff --cached --quiet; then
-            git commit -m "记录电势差重新生成版构建日志"
+            git commit -m "更新电势差重新生成版构建日志"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
@@ -84,14 +96,14 @@ jobs:
           print(f'validated: {p} ({p.stat().st_size} bytes)')
           PY
 
-      - name: Commit generated DOCX
+      - name: Commit corrected generator and DOCX
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           rm -f debug/potential-difference-v2.log
-          git add -A "downloads/一题三变加高考真题_第十章_电势差_重新生成自检版.docx" debug/potential-difference-v2.log
+          git add -A tools/build_potential_difference_regenerated_v2.py "downloads/一题三变加高考真题_第十章_电势差_重新生成自检版.docx" debug/potential-difference-v2.log
           if ! git diff --cached --quiet; then
-            git commit -m "生成电势差重新生成自检版Word"
+            git commit -m "固化电势差重新生成自检版Word"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
