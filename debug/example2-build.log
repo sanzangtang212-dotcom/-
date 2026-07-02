@@ -1,0 +1,4 @@
+  File "/home/runner/work/-/-/tools/build_coulomb_example2_publishing_docx.py", line 253
+    parts.append(body(cn('静电力大小为 '), roman('0.17 N'),
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
