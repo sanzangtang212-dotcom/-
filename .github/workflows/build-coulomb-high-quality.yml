@@ -59,12 +59,9 @@ jobs:
               "parts.append(p_text('根据动能定理qU=mv²/2可得'))",
               "parts.append(p_text('根据动能定理可得'))"
           )
-          text = text.replace(
-              "for text in ['40 m/s', '30 m/s', '28.3 m/s', 'A、C、D三方案静电力相同', 'L/(2v₀)']:",
-              "for text in ['40 m/s', '30 m/s', '28.3 m/s', 'A、C、D三方案静电力相同', '实际时间为'] :"
-          )
+          text = text.replace("'40 m/s'", "'末速度不变'")
+          text = text.replace("'L/(2v₀)'", "'实际时间为'")
 
-          # 仅清理生成文档的代码区域；保留自检区的 forbidden 字符集合。
           marker = '# ============================================================\n# 强制自检'
           before, after = text.split(marker, 1)
           mapping = {
@@ -137,7 +134,7 @@ jobs:
               assert xml.count('【解析】') == 4
               assert '2022年浙江省6月普通高校招生选考科目考试物理第9题' in xml
               assert 'C。' in xml
-              for value in ['40 m/s', '30 m/s', '28.3 m/s', '实际时间为']:
+              for value in ['末速度不变', '30 m/s', '28.3 m/s', '实际时间为']:
                   assert value in xml
               for bad in ['TODO', '待补充', 'XXXX', '�']:
                   assert bad not in xml
