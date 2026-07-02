@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/runner/work/-/-/tools/build_potential_difference_all_refined.py", line 187, in <module>
+    exec(compile(source, 'build_potential_difference_all_refined_generated.py', 'exec'), {'__name__': '__main__'})
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_potential_difference_all_refined_generated.py", line 193
+    parts.append(body(cn('（3）把电荷量为 '), sci_text('2.0', '-9', 'C'), cn(' 的正点电荷从A点移动到C点，求静电力做的功。'))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
