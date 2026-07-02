@@ -26,10 +26,20 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Build and self-check DOCX
+      - name: Patch generator and build DOCX
         id: build
         shell: bash
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/build_coulomb_example2_publishing_docx.py')
+          text = p.read_text(encoding='utf-8')
+          old = "cn(' 并背离三角形中心。'))\nparts.append(label('【解析】'))"
+          new = "cn(' 并背离三角形中心。')))\nparts.append(label('【解析】'))"
+          if old in text:
+              text = text.replace(old, new, 1)
+          p.write_text(text, encoding='utf-8')
+          PY
           set +e
           python tools/build_coulomb_example2_publishing_docx.py > example2-build.log 2>&1
           status=$?
@@ -46,7 +56,7 @@ jobs:
           cp example2-build.log debug/example2-build.log
           git add debug/example2-build.log
           if ! git diff --cached --quiet; then
-            git commit -m "记录库仑定律例题2 Word 构建日志"
+            git commit -m "更新库仑定律例题2 Word 构建日志"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
 
