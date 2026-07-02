@@ -1,4 +1,5 @@
-  File "/home/runner/work/-/-/tools/build_potential_difference_regenerated_v2.py", line 192
-    parts.append(body(cn('（3）把电荷量为 '), sci_text('3.0', '-9', 'C'), cn(' 的正点电荷从A点移动到C点，求静电力做的功。'))
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-SyntaxError: invalid syntax. Perhaps you forgot a comma?
+Traceback (most recent call last):
+  File "/home/runner/work/-/-/tools/build_potential_difference_regenerated_v2.py", line 351, in <module>
+    assert value in xml
+           ^^^^^^^^^^^^
+AssertionError
