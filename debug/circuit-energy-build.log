@@ -1,5 +1,3 @@
-Traceback (most recent call last):
-  File "/home/runner/work/-/-/tools/build_circuit_energy_motor_refined.py", line 338, in <module>
-    assert not any(ch in xml for ch in forbidden)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError
+downloads/一题三变加高考真题_第十二章_电路中的能量转化_精修版.docx
+OFFENDERS= ['U+00B2:²']
+CONTEXT 'val="0"/><w:i w:val="0"/><w:sz w:val="24"/></w:rPr><w:t>注意：电动机正常转动时是非纯电阻用电器，不能用U²/R或UI=I²R计算其总功率。</w:t></w:r></w:p><w:p><w:r><w:br w:type="page"/></w:r></w:p><w'
