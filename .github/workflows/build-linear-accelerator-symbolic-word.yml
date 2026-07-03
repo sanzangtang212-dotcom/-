@@ -27,7 +27,32 @@ jobs:
           python-version: '3.12'
 
       - name: Build and self-check DOCX
-        run: python tools/build_linear_accelerator_symbolic_docx.py
+        id: build
+        shell: bash
+        run: |
+          set +e
+          python tools/build_linear_accelerator_symbolic_docx.py > linear-accelerator-build.log 2>&1
+          status=$?
+          cat linear-accelerator-build.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Commit diagnostic log
+        if: steps.build.outputs.status != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p debug
+          cp linear-accelerator-build.log debug/linear-accelerator-build.log
+          git add debug/linear-accelerator-build.log
+          if ! git diff --cached --quiet; then
+            git commit -m "记录多级直线加速器字母推导版Word构建日志"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Stop on build failure
+        if: steps.build.outputs.status != '0'
+        run: exit 1
 
       - name: Independent validation
         run: |
@@ -70,7 +95,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tools/build_linear_accelerator_symbolic_docx.py "downloads/多级直线加速器_一题三变_字母推导版.docx"
+          rm -f debug/linear-accelerator-build.log
+          git add -A tools/build_linear_accelerator_symbolic_docx.py "downloads/多级直线加速器_一题三变_字母推导版.docx" debug/linear-accelerator-build.log
           if ! git diff --cached --quiet; then
             git commit -m "生成多级直线加速器一题三变字母推导版Word"
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
