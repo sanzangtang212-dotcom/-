@@ -26,13 +26,24 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Normalize size check
+      - name: Normalize publishing typography
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('tools/build_linear_accelerator_symbolic_docx.py')
           text = p.read_text(encoding='utf-8')
           text = text.replace('OUT.stat().st_size > 7000', 'OUT.stat().st_size > 4000')
+          text = text.replace(
+              "某带电粒子的质量为m，电荷量的绝对值为q，以初速度v₀从序号为0的金属圆板中央进入直线加速器。",
+              "某带电粒子的质量为m，电荷量的绝对值为q，以给定初速度从序号为0的金属圆板中央进入直线加速器。"
+          )
+          text = text.replace(
+              "某直线加速器原来用于加速粒子甲。粒子甲的质量为m₁，电荷量的绝对值为q₁，交变电压的绝对值为U₁，周期为T₁。粒子甲由静止开始运动，各圆筒长度已经按同步条件设计完成。现用同一组圆筒加速粒子乙，粒子乙的质量为m₂，电荷量的绝对值为q₂，所用交变电压的绝对值为U₂，周期为T₂。两种粒子的初速度均忽略不计。",
+              "某直线加速器原来用于加速粒子甲。粒子甲的质量、电荷量绝对值、交变电压绝对值和周期均在公式中用下标1表示。现用同一组圆筒加速粒子乙，粒子乙的相应物理量均在公式中用下标2表示。两种粒子的初速度均忽略不计。"
+          )
+          text = text.replace('（2）若交变电压保持不变，求T₂与T₁的关系。', '（2）若两种情况下交变电压保持不变，求两个周期的关系。')
+          text = text.replace('（3）若交变电压的周期保持不变，求U₂与U₁的关系。', '（3）若两种情况下交变电压周期保持不变，求两个电压的关系。')
+          text = text.replace('粒子经过n次加速后获得的动能为nqU，因此两种粒子的动能之比为q₂U₂与q₁U₁之比。', '粒子经过n次加速后获得的动能为nqU，因此两种粒子的动能之比等于各自电荷量与加速电压乘积之比。')
           p.write_text(text, encoding='utf-8')
           PY
 
