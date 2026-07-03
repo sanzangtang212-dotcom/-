@@ -1,0 +1,83 @@
+name: Build linear accelerator symbolic DOCX
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/build_linear_accelerator_symbolic_docx.py'
+      - '.github/workflows/build-linear-accelerator-symbolic-word.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build and self-check DOCX
+        run: python tools/build_linear_accelerator_symbolic_docx.py
+
+      - name: Independent validation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import xml.etree.ElementTree as ET
+
+          p = Path('downloads/多级直线加速器_一题三变_字母推导版.docx')
+          assert p.exists() and p.stat().st_size > 7000, p
+          with ZipFile(p) as z:
+              names = set(z.namelist())
+              required = {
+                  '[Content_Types].xml', '_rels/.rels', 'word/document.xml',
+                  'word/styles.xml', 'word/settings.xml',
+                  'word/_rels/document.xml.rels'
+              }
+              assert required.issubset(names)
+              xml = z.read('word/document.xml').decode('utf-8')
+              ET.fromstring(xml)
+              ET.fromstring(z.read('word/styles.xml'))
+              ET.fromstring(z.read('word/settings.xml'))
+              forbidden = '⁰¹²³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ'
+              assert not any(ch in xml for ch in forbidden)
+              assert xml.count('【题目】') == 3
+              assert xml.count('【答案】') == 3
+              assert xml.count('【解析】') == 3
+              assert '<m:oMathPara>' in xml
+              assert '<m:f>' in xml and '<m:rad>' in xml
+              assert '<m:sSub>' in xml and '<m:sSup>' in xml
+              assert 'Book Antiqua' in xml and 'Times New Roman' in xml
+              for text in ['同模型规律巩固', '粒子具有初速度', '同一加速器加速不同粒子', '圆筒长度的平方构成等差数列']:
+                  assert text in xml
+              for bad in ['TODO', '待补充', 'XXXX', '�']:
+                  assert bad not in xml
+          print(f'validated: {p} ({p.stat().st_size} bytes)')
+          PY
+
+      - name: Commit generated DOCX
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/build_linear_accelerator_symbolic_docx.py "downloads/多级直线加速器_一题三变_字母推导版.docx"
+          if ! git diff --cached --quiet; then
+            git commit -m "生成多级直线加速器一题三变字母推导版Word"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linear-accelerator-symbolic-word
+          path: downloads/多级直线加速器_一题三变_字母推导版.docx
