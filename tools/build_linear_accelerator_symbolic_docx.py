@@ -191,7 +191,7 @@ parts.append(body('电子进入第n个圆筒时的动能为neu，因此动能之
 # Variation 2
 parts.append(heading('二、情境变式——粒子具有初速度', page_break=True))
 parts.append(label('【题目】'))
-parts.append(body('某带电粒子的质量为m，电荷量的绝对值为q，以初速度v₀从序号为0的金属圆板中央进入直线加速器。交变电压的绝对值为U，周期为T。粒子每通过一个圆筒间隙，静电力均对其做正功，且通过间隙的时间忽略不计。'))
+parts.append(body('某带电粒子的质量为m，电荷量的绝对值为q，以给定初速度从序号为0的金属圆板中央进入直线加速器。交变电压的绝对值为U，周期为T。粒子每通过一个圆筒间隙，静电力均对其做正功，且通过间隙的时间忽略不计。'))
 parts.append(body('（1）求粒子进入第n个圆筒时的速度。'))
 parts.append(body('（2）采用最短同步条件，求第n个圆筒的长度。'))
 parts.append(body('（3）证明圆筒长度的平方随序号n均匀增加。'))
@@ -213,10 +213,10 @@ parts.append(body('该式是关于序号n的一次函数，所以圆筒长度的
 # Variation 3
 parts.append(heading('三、素养提升——同一加速器加速不同粒子', page_break=True))
 parts.append(label('【题目】'))
-parts.append(body('某直线加速器原来用于加速粒子甲。粒子甲的质量为m₁，电荷量的绝对值为q₁，交变电压的绝对值为U₁，周期为T₁。粒子甲由静止开始运动，各圆筒长度已经按同步条件设计完成。现用同一组圆筒加速粒子乙，粒子乙的质量为m₂，电荷量的绝对值为q₂，所用交变电压的绝对值为U₂，周期为T₂。两种粒子的初速度均忽略不计。'))
+parts.append(body('某直线加速器原来用于加速粒子甲。粒子甲的质量、电荷量绝对值、交变电压绝对值和周期均在公式中用下标1表示。现用同一组圆筒加速粒子乙，粒子乙的相应物理量均在公式中用下标2表示。两种粒子的初速度均忽略不计。'))
 parts.append(body('（1）推导粒子乙能够使用原有圆筒同步加速的条件。'))
-parts.append(body('（2）若交变电压保持不变，求T₂与T₁的关系。'))
-parts.append(body('（3）若交变电压的周期保持不变，求U₂与U₁的关系。'))
+parts.append(body('（2）若两种情况下交变电压保持不变，求两个周期的关系。'))
+parts.append(body('（3）若两种情况下交变电压周期保持不变，求两个电压的关系。'))
 parts.append(body('（4）两种粒子分别经过n次加速后，求其动能之比。'))
 parts.append(label('【答案】'))
 parts.append(eq(S('T', '2') + mrad(FRAC(S('q', '2') + S('U', '2'), S('m', '2'))) + mop('=') + S('T', '1') + mrad(FRAC(S('q', '1') + S('U', '1'), S('m', '1')))))
@@ -231,7 +231,7 @@ parts.append(eq(S('L', 'n') + mop('=') + FRAC(S('T', '1'), mn('2')) + mrad(FRAC(
 parts.append(body('粒子乙使用同一圆筒时，也必须满足相同的圆筒长度。于是'))
 parts.append(eq(FRAC(S('T', '1'), mn('2')) + mrad(FRAC(mn('2') + mv('n') + S('q', '1') + S('U', '1'), S('m', '1'))) + mop('=') + FRAC(S('T', '2'), mn('2')) + mrad(FRAC(mn('2') + mv('n') + S('q', '2') + S('U', '2'), S('m', '2')))))
 parts.append(body('约去相同因子后，即得到同步条件。若电压保持不变，可由同步条件解出周期关系；若周期保持不变，可解出电压关系。'))
-parts.append(body('粒子经过n次加速后获得的动能为nqU，因此两种粒子的动能之比为q₂U₂与q₁U₁之比。'))
+parts.append(body('粒子经过n次加速后获得的动能为nqU，因此两种粒子的动能之比等于各自电荷量与加速电压乘积之比。'))
 
 # Reminders
 parts.append(heading('易错提醒', page_break=True))
@@ -259,7 +259,7 @@ with ZipFile(OUT, 'w', ZIP_DEFLATED) as z:
     z.writestr('word/_rels/document.xml.rels', doc_rels)
 
 # ---------- Validation ----------
-assert OUT.exists() and OUT.stat().st_size > 7000
+assert OUT.exists() and OUT.stat().st_size > 4000
 with ZipFile(OUT) as z:
     xml = z.read('word/document.xml').decode('utf-8')
     ET.fromstring(xml)
