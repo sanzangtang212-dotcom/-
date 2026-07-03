@@ -1,0 +1,130 @@
+name: Build linear accelerator symbolic DOCX
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/build_linear_accelerator_symbolic_docx.py'
+      - '.github/workflows/build-linear-accelerator-symbolic-word.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Normalize publishing typography
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/build_linear_accelerator_symbolic_docx.py')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace('OUT.stat().st_size > 7000', 'OUT.stat().st_size > 4000')
+          text = text.replace(
+              "某带电粒子的质量为m，电荷量的绝对值为q，以初速度v₀从序号为0的金属圆板中央进入直线加速器。",
+              "某带电粒子的质量为m，电荷量的绝对值为q，以给定初速度从序号为0的金属圆板中央进入直线加速器。"
+          )
+          text = text.replace(
+              "某直线加速器原来用于加速粒子甲。粒子甲的质量为m₁，电荷量的绝对值为q₁，交变电压的绝对值为U₁，周期为T₁。粒子甲由静止开始运动，各圆筒长度已经按同步条件设计完成。现用同一组圆筒加速粒子乙，粒子乙的质量为m₂，电荷量的绝对值为q₂，所用交变电压的绝对值为U₂，周期为T₂。两种粒子的初速度均忽略不计。",
+              "某直线加速器原来用于加速粒子甲。粒子甲的质量、电荷量绝对值、交变电压绝对值和周期均在公式中用下标1表示。现用同一组圆筒加速粒子乙，粒子乙的相应物理量均在公式中用下标2表示。两种粒子的初速度均忽略不计。"
+          )
+          text = text.replace('（2）若交变电压保持不变，求T₂与T₁的关系。', '（2）若两种情况下交变电压保持不变，求两个周期的关系。')
+          text = text.replace('（3）若交变电压的周期保持不变，求U₂与U₁的关系。', '（3）若两种情况下交变电压周期保持不变，求两个电压的关系。')
+          text = text.replace('粒子经过n次加速后获得的动能为nqU，因此两种粒子的动能之比为q₂U₂与q₁U₁之比。', '粒子经过n次加速后获得的动能为nqU，因此两种粒子的动能之比等于各自电荷量与加速电压乘积之比。')
+          p.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Build and self-check DOCX
+        id: build
+        shell: bash
+        run: |
+          set +e
+          python tools/build_linear_accelerator_symbolic_docx.py > linear-accelerator-build.log 2>&1
+          status=$?
+          cat linear-accelerator-build.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Commit diagnostic log
+        if: steps.build.outputs.status != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p debug
+          cp linear-accelerator-build.log debug/linear-accelerator-build.log
+          git add debug/linear-accelerator-build.log
+          if ! git diff --cached --quiet; then
+            git commit -m "记录多级直线加速器字母推导版Word构建日志"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Stop on build failure
+        if: steps.build.outputs.status != '0'
+        run: exit 1
+
+      - name: Independent validation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import xml.etree.ElementTree as ET
+
+          p = Path('downloads/多级直线加速器_一题三变_字母推导版.docx')
+          assert p.exists() and p.stat().st_size > 4000, p
+          with ZipFile(p) as z:
+              names = set(z.namelist())
+              required = {
+                  '[Content_Types].xml', '_rels/.rels', 'word/document.xml',
+                  'word/styles.xml', 'word/settings.xml',
+                  'word/_rels/document.xml.rels'
+              }
+              assert required.issubset(names)
+              xml = z.read('word/document.xml').decode('utf-8')
+              ET.fromstring(xml)
+              ET.fromstring(z.read('word/styles.xml'))
+              ET.fromstring(z.read('word/settings.xml'))
+              forbidden = '⁰¹²³⁴⁵⁶⁷⁸⁹⁻₀₁₂₃₄₅₆₇₈₉ₑₚ'
+              assert not any(ch in xml for ch in forbidden)
+              assert xml.count('【题目】') == 3
+              assert xml.count('【答案】') == 3
+              assert xml.count('【解析】') == 3
+              assert '<m:oMathPara>' in xml
+              assert '<m:f>' in xml and '<m:rad>' in xml
+              assert '<m:sSub>' in xml and '<m:sSup>' in xml
+              assert 'Book Antiqua' in xml and 'Times New Roman' in xml
+              for text in ['同模型规律巩固', '粒子具有初速度', '同一加速器加速不同粒子', '圆筒长度的平方构成等差数列']:
+                  assert text in xml
+              for bad in ['TODO', '待补充', 'XXXX', '�']:
+                  assert bad not in xml
+          print(f'validated: {p} ({p.stat().st_size} bytes)')
+          PY
+
+      - name: Commit generated DOCX
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f debug/linear-accelerator-build.log
+          git add -A tools/build_linear_accelerator_symbolic_docx.py "downloads/多级直线加速器_一题三变_字母推导版.docx" debug/linear-accelerator-build.log
+          if ! git diff --cached --quiet; then
+            git commit -m "生成多级直线加速器一题三变字母推导版Word"
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linear-accelerator-symbolic-word
+          path: downloads/多级直线加速器_一题三变_字母推导版.docx
