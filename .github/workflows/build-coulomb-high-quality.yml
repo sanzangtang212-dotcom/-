@@ -1,5 +1,6 @@
 name: Build potential-field relation publishing DOCX
 
+# Generate and validate the editable Word document.
 on:
   pull_request:
     branches: [main]
